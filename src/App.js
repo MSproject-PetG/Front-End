@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import axios from "axios";
+
+const CAMERA_API = "http://125.178.97.243:5001"; // 카메라 서버 주소
+const AI_API = "http://4.230.24.162:8000"
 
 const Container = styled.div`
   min-height: 100vh;
@@ -20,7 +24,22 @@ const VideoSection = styled.div`
   background: black;
   width: 100%;
   height: 500px;
-  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const VideoStream = styled.img`
+  width: 100%;
+  max-width: 800px;
+  height: 100%;
+  object-fit: contain;
+`;
+
+const ResultBox = styled.div`
+  margin-top: 10px;
+  color: white;
+  font-size: 1.2rem;
 `;
 
 const ButtonGroup = styled.div`
@@ -152,29 +171,77 @@ export default function PetCamUI() {
   const [training, setTraining] = useState("앉아");
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [showRecordModal, setShowRecordModal] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [poseResult, setPoseResult] = useState("");
 
   const trainingInstructions = {
-    "앉아": [
-      "간식을 강아지 코앞에 갖다 대고 냄새를 맡게 해 주세요.",
-      "손에 간식을 들고 강아지와 마주 앉으세요.",
-      "간식을 강아지 머리 위로 들어 올리세요. 강아지는 간식을 올려다보며 자연스럽게 앉을 것입니다.",
-      "강아지가 앉으면 칭찬과 보상을 해주세요.",
-      "하루에 여러 번 반복하세요.",
-      "강아지가 계속해서 잘 앉는다면 간식 없이도 앉을 수 있도록 점차적으로 간식을 줄입니다."
-    ],
-    "엎드려": [
-      "강아지를 앉힌 후 손바닥을 펴서 '엎드려'라고 말합니다.",
-      "강아지가 자세를 낮추고 엎드리면 간식을 줍니다.",
-      "엎드리는 자세가 익숙해지도록 반복합니다.",
-      "지속적으로 칭찬하며 습관화 시켜 주세요."
-    ],
-    "손!": [
-      "간식을 손에 쥐고 강아지에게 '손!' 이라고 말합니다.",
-      "강아지가 앞발을 들면 손바닥을 내밀어 올리게 유도합니다.",
-      "발을 올리면 간식과 칭찬을 함께 주세요.",
-      "이 동작을 반복하여 익숙해지게 하세요."
-    ]
+  "앉아": [
+    "간식을 강아지 코앞에 갖다 대고 냄새를 맡게 해 주세요.",
+    "손에 간식을 들고 강아지와 마주 앉으세요.",
+    "간식을 강아지 머리 위로 들어 올리세요.",
+    "강아지가 앉으면 칭찬과 보상을 해주세요."
+  ],
+  "엎드려": [
+    "강아지를 앉힌 후 손바닥을 펴서 '엎드려'라고 말합니다.",
+    "강아지가 자세를 낮추고 엎드리면 간식을 줍니다."
+  ],
+  "손!": [
+    "간식을 손에 쥐고 강아지에게 '손!' 이라고 말합니다.",
+    "앞발을 들면 손바닥을 내밀어 올리게 유도합니다."
+  ]
+};
+
+
+  useEffect(() => {
+    let interval;
+    if (mode === "train") {
+      interval = setInterval(async () => {
+        try {
+          const res = await axios.get(`${AI_API}/pose-result`);
+          if (res.data?.result) setPoseResult(res.data.result);
+        } catch (e) {
+          console.error("자세 결과 수신 오류:", e);
+        }
+      }, 2000);
+    } else {
+      setPoseResult("");
+    }
+    return () => clearInterval(interval);
+  }, [mode]);
+
+  const toggleStream = async () => {
+    try {
+      const command = streaming ? "stop_stream" : "start_stream";
+      await axios.post(`${CAMERA_API}/control`, {
+        command: command,
+      });
+      setStreaming(!streaming);
+    } catch (err) {
+      alert("카메라 연결 오류: " + err);
+    }
   };
+
+
+  const startTraining = async () => {
+    try {
+      await axios.post(`${CAMERA_API}/control`, {
+        command: "start_training",
+      });
+    } catch (err) {
+      console.error("훈련 모드 시작 실패:", err);
+    }
+  };
+
+  const stopTraining = async () => {
+    try {
+      await axios.post(`${CAMERA_API}/control`, {
+        command: "stop_training",
+      });
+    } catch (err) {
+      console.error("훈련 모드 종료 실패:", err);
+    }
+  };
+
 
   const handleTrainingClick = (type) => {
     setTraining(type);
@@ -184,6 +251,7 @@ export default function PetCamUI() {
   const confirmTraining = () => {
     setShowTrainingModal(false);
     setShowRecordModal(true);
+    startTraining();
   };
 
   const startRecording = () => {
@@ -191,23 +259,45 @@ export default function PetCamUI() {
     // 실제 녹화 로직 실행 예정
   };
 
+  useEffect(() => {
+    if (mode === "train") startTraining();
+    else stopTraining();
+  }, [mode]);
+
   return (
     <Container>
       <Header>PetG 홈캠</Header>
-      <VideoSection />
 
+      {/* ✅ 실시간 영상 스트리밍 + 자세 분석 결과 */}
+      <VideoSection>
+        {streaming ? (
+          <>
+            <VideoStream src="http://125.178.97.243:5001/video" alt="Live" />
+            {mode === "train" && (
+              <ResultBox>자세 결과: {poseResult || "분석 중..."}</ResultBox>
+            )}
+          </>
+        ) : (
+          <div style={{ color: "white", fontSize: "1.2rem" }}>
+            🔌 영상이 꺼져 있습니다. 아래 ▶️ 아이콘을 눌러 켜주세요.
+          </div>
+        )}
+      </VideoSection>
+
+      {/* ✅ 모드 선택 버튼 */}
       <ModeSelect>
         <ModeButton active={mode === "home"} onClick={() => setMode("home")}>일반 모드</ModeButton>
         <ModeButton active={mode === "train"} onClick={() => setMode("train")}>훈련 모드</ModeButton>
       </ModeSelect>
 
+      {/* ✅ 일반 모드 UI */}
       {mode === "home" && (
         <>
           <ButtonGroup>
             <IconButton><Icon>📸</Icon>스크린샷</IconButton>
             <IconButton><Icon>🎤</Icon>말하기</IconButton>
             <IconButton><Icon>🎥</Icon>녹화</IconButton>
-            <IconButton><Icon>▶️</Icon>재생</IconButton>
+            <IconButton onClick={toggleStream}><Icon>▶️</Icon>{streaming ? "중지" : "재생"}</IconButton>
             <IconButton><Icon>🔁</Icon>방향</IconButton>
             <IconButton><Icon>🚨</Icon>경보</IconButton>
           </ButtonGroup>
@@ -222,6 +312,7 @@ export default function PetCamUI() {
         </>
       )}
 
+      {/* ✅ 훈련 모드 UI */}
       {mode === "train" && (
         <ContentArea>
           <SectionTitle>🏅 훈련 모드: {training}</SectionTitle>
@@ -241,6 +332,7 @@ export default function PetCamUI() {
         </ContentArea>
       )}
 
+      {/* ✅ 훈련 설명 모달 */}
       {showTrainingModal && (
         <ModalOverlay>
           <ModalBox>
@@ -260,6 +352,7 @@ export default function PetCamUI() {
         </ModalOverlay>
       )}
 
+      {/* ✅ 녹화 확인 모달 */}
       {showRecordModal && (
         <ModalOverlay>
           <ModalBox style={{ textAlign: 'center' }}>
@@ -273,4 +366,5 @@ export default function PetCamUI() {
       )}
     </Container>
   );
+
 }
