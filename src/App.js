@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 
-const CAMERA_API = "http://125.178.97.243:5001"; // 카메라 서버 주소
-const AI_API = "http://4.230.24.162:8000"
+const CAMERA_API = "https://0fc82ead7727.ngrok-free.app/video_feed"; // 카메라 서버 주소
+const AI_API = "https://petg.store"
 
 const Container = styled.div`
   min-height: 100vh;
@@ -212,7 +212,7 @@ export default function PetCamUI() {
   const toggleStream = async () => {
     try {
       const command = streaming ? "stop_stream" : "start_stream";
-      await axios.post(`${CAMERA_API}/control`, {
+      await axios.post(`${CAMERA_API}/mode`, {
         command: command,
       });
       setStreaming(!streaming);
@@ -224,7 +224,7 @@ export default function PetCamUI() {
 
   const startTraining = async () => {
     try {
-      await axios.post(`${CAMERA_API}/control`, {
+      await axios.post(`${CAMERA_API}/mode`, {
         command: "start_training",
       });
     } catch (err) {
@@ -234,7 +234,7 @@ export default function PetCamUI() {
 
   const stopTraining = async () => {
     try {
-      await axios.post(`${CAMERA_API}/control`, {
+      await axios.post(`${CAMERA_API}/mode`, {
         command: "stop_training",
       });
     } catch (err) {
@@ -272,7 +272,7 @@ export default function PetCamUI() {
       <VideoSection>
         {streaming ? (
           <>
-            <VideoStream src="http://125.178.97.243:5001/video" alt="Live" />
+            <VideoStream src="https://0fc82ead7727.ngrok-free.app/video_feed" alt="Live" />
             {mode === "train" && (
               <ResultBox>자세 결과: {poseResult || "분석 중..."}</ResultBox>
             )}
