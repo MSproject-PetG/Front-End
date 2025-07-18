@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 
-const CAMERA_API = "https://0fc82ead7727.ngrok-free.app/video_feed"; // 카메라 서버 주소
+const CAMERA_API = "https://d2be351381b9.ngrok-free.app/video_feed"; // 카메라 서버 주소
 const AI_API = "https://petg.store"
 
 const Container = styled.div`
@@ -272,7 +272,7 @@ export default function PetCamUI() {
       <VideoSection>
         {streaming ? (
           <>
-            <VideoStream src="https://0fc82ead7727.ngrok-free.app/video_feed" alt="Live" />
+            <VideoStream src="https://d2be351381b9.ngrok-free.app/video_feed" alt="Live" />
             {mode === "train" && (
               <ResultBox>자세 결과: {poseResult || "분석 중..."}</ResultBox>
             )}
