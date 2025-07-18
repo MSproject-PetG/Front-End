@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 
-const CAMERA_API = "https://relay.petg.store/control"; // 카메라 서버 주소
+const CAMERA_API = "https://relay.petg.store"; // 카메라 서버 주소
 const AI_API = "https://petg.store"
 
 const Container = styled.div`
