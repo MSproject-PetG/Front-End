@@ -25,9 +25,11 @@ const VideoSection = styled.div`
   width: 100%;
   height: 500px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 `;
+
 
 const VideoStream = styled.img`
   width: 100%;
@@ -37,10 +39,17 @@ const VideoStream = styled.img`
 `;
 
 const ResultBox = styled.div`
-  margin-top: 10px;
-  color: white;
+  margin-top: 1rem;
+  padding: 0.75rem 1.2rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   font-size: 1.2rem;
+  border-radius: 1rem;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
 `;
+
 
 const ButtonGroup = styled.div`
   display: flex;
