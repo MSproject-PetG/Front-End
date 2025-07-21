@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; //되나?
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 
@@ -39,7 +39,7 @@ const Button = styled.button`
   }
 `;
 
-function App() {
+function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -91,4 +91,4 @@ function App() {
   );
 }
 
-export default App;
+export default Login;
