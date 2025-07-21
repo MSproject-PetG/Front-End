@@ -182,6 +182,8 @@ export default function PetCamUI() {
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [poseResult, setPoseResult] = useState("");
+  const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
+
 
   const trainingInstructions = {
   "앉아": [
@@ -203,7 +205,7 @@ export default function PetCamUI() {
 
   useEffect(() => {
     let interval;
-    if (mode === "train") {
+    if (mode === "train" && poseAnalysisStarted) {
       interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
@@ -216,7 +218,8 @@ export default function PetCamUI() {
       setPoseResult("");
     }
     return () => clearInterval(interval);
-  }, [mode]);
+  }, [mode, poseAnalysisStarted]);
+
 
   const toggleStream = async () => {
     try {
@@ -265,13 +268,18 @@ export default function PetCamUI() {
 
   const startRecording = () => {
     setShowRecordModal(false);
-    startTraining();
+    startTraining();                  // AI 서버에 훈련 시작 알림
+    setPoseAnalysisStarted(true);
     // 실제 녹화 로직 실행 예정
   };
 
   useEffect(() => {
-    stopTraining();
+    if (mode !== "train") {
+      stopTraining();
+      setPoseAnalysisStarted(false);  // 분석 종료
+    }
   }, [mode]);
+
 
   return (
     <Container>
