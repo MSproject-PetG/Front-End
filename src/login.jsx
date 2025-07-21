@@ -65,7 +65,7 @@ function App() {
 
       const data = await res.json();
       localStorage.setItem("access_token", data.access_token);
-      navigate("/App"); // 로그인 성공 후 /main으로 이동
+      navigate("/main"); // 로그인 성공 후 /main으로 이동
     } catch (err) {
       alert("서버 오류: " + err);
     }
