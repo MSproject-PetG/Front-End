@@ -265,12 +265,12 @@ export default function PetCamUI() {
 
   const startRecording = () => {
     setShowRecordModal(false);
+    startTraining();
     // 실제 녹화 로직 실행 예정
   };
 
   useEffect(() => {
-    if (mode === "train") startTraining();
-    else stopTraining();
+    stopTraining();
   }, [mode]);
 
   return (
