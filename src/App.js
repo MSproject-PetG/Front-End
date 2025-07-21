@@ -213,7 +213,7 @@ export default function PetCamUI() {
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
         }
-      }, 2000);
+      }, 1000);
     } else {
       setPoseResult("");
     }
