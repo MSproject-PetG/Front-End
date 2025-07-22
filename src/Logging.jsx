@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 
@@ -44,6 +44,12 @@ function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  // ✅ 이미 로그인된 사용자는 main으로 redirect
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) navigate("/main", { replace: true });
+  }, [navigate]);
+
   const handleLogin = async () => {
     try {
       const res = await fetch("https://auth.petg.store/login", {
@@ -65,7 +71,7 @@ function Login() {
 
       const data = await res.json();
       localStorage.setItem("access_token", data.access_token);
-      navigate("/main"); // 로그인 성공 후 /main으로 이동
+      navigate("/main", { replace: true }); // 로그인 성공 후 /main으로 이동
     } catch (err) {
       alert("서버 오류: " + err);
     }
