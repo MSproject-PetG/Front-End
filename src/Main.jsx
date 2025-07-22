@@ -184,6 +184,7 @@ export default function PetCamUI() {
   const [streaming, setStreaming] = useState(false);
   const [poseResult, setPoseResult] = useState("");
   const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
+  const [videoSrc, setVideoSrc] = useState("https://relay.petg.store/video"); // ✅ 영상 src 상태 관리
   const navigate = useNavigate();
   const isFirstRender = useRef(true);
 
@@ -237,16 +238,27 @@ export default function PetCamUI() {
 
 
   const toggleStream = async () => {
-    try {
-      const command = streaming ? "stop_stream" : "start_stream";
-      await axios.post(`${CAMERA_API}/control`, {
-        command: command,
-      });
-      setStreaming(!streaming);
+  try {
+    const command = streaming ? "stop_stream" : "start_stream";
+    await axios.post(`${CAMERA_API}/control`, {
+      command: command,
+    });
+
+    setStreaming(!streaming);
+
+    // ✅ streaming을 시작할 때만 src 강제 갱신
+    if (!streaming) {
+      setVideoSrc(""); // 먼저 src 초기화 (기존 연결 끊기게 유도)
+      setTimeout(() => {
+        setVideoSrc(`https://relay.petg.store/video?t=${Date.now()}`); // 새로고침
+      }, 100);
+    }
+
     } catch (err) {
       alert("카메라 연결 오류: " + err);
     }
   };
+
 
 
   const startTraining = async () => {
@@ -322,7 +334,7 @@ export default function PetCamUI() {
       <VideoSection>
         {streaming ? (
           <>
-            <VideoStream src="https://relay.petg.store/video" alt="Live" />
+            <VideoStream key={videoSrc} src={videoSrc} alt="Live" />
             {mode === "train" && poseAnalysisStarted && (
                 <ResultBox>
                   {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
