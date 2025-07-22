@@ -65,7 +65,7 @@ function Login() {
 
       if (!res.ok) {
         const error = await res.json();
-        alert("로그인 실패: " + (error.detail || "알 수 없는 오류"));
+        alert("로그인 실패: " + (error || "알 수 없는 오류"));
         return;
       }
 

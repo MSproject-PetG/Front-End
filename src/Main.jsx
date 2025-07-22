@@ -184,9 +184,20 @@ export default function PetCamUI() {
   const [streaming, setStreaming] = useState(false);
   const [poseResult, setPoseResult] = useState("");
   const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(null);
+  const [lastStepIndex, setLastStepIndex] = useState(null);
+  const [showStepComplete, setShowStepComplete] = useState(false);
+  const [clear, setClear] = useState(false);
   const navigate = useNavigate();
   const isFirstRender = useRef(true);
 
+  const stepMessages = [
+    "1. 강아지와 사람을 한 화면에 나오게 해주세요!",
+    "2. 훈련 준비 완료!",
+    "3. 손에 간식을 들고 강아지와 마주 앉으세요.",
+    "4. 간식을 강아지 머리 위로 들어 올리세요."
+    // 이후 단계가 생길 경우 여기에 추가 가능
+  ];
 
   const trainingInstructions = {
   "앉아": [
@@ -225,13 +236,38 @@ export default function PetCamUI() {
       interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
-          if (res.data?.result) setPoseResult(res.data.result);
+          const msg = res.data?.result;
+          if (!msg) return;
+
+          const stepIdx = stepMessages.indexOf(msg);
+          if (stepIdx === -1) return; // 알 수 없는 메시지 무시
+
+          // 마지막 단계면 Clear 표시
+          if (stepIdx === stepMessages.length - 1) {
+            setClear(true);
+          } else {
+            setClear(false);
+          }
+
+          // 다음 단계로 갔을 때만 완료 메시지 표시
+          if (lastStepIndex !== null && stepIdx > lastStepIndex) {
+            setShowStepComplete(true);
+            setTimeout(() => setShowStepComplete(false), 2000);
+          }
+
+          setLastStepIndex(stepIdx);
+          setCurrentStepIndex(stepIdx);
+          setPoseResult(msg);
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
         }
-      }, 1000);
+      }, 2000);
     } else {
       setPoseResult("");
+      setCurrentStepIndex(null);
+      setLastStepIndex(null);
+      setShowStepComplete(false);
+      setClear(false);
     }
     return () => clearInterval(interval);
   }, [mode, poseAnalysisStarted]);
@@ -325,9 +361,18 @@ export default function PetCamUI() {
           <>
             <VideoStream src="https://relay.petg.store/video" alt="Live" />
             {mode === "train" && (
-              <ResultBox>자세 결과: {poseResult || "분석 중..."}</ResultBox>
+              <>
+            {showStepComplete && (
+              <ResultBox style={{ background: 'rgba(0,255,0,0.2)', fontWeight: 'bold' }}>
+                ✅ 이전 단계 완료!
+              </ResultBox>
             )}
+            <ResultBox>
+              자세 결과: {poseResult || "분석 중..."}
+            </ResultBox>
           </>
+        )}
+      </>
         ) : (
           <div style={{ color: "white", fontSize: "1.2rem" }}>
             🔌 영상이 꺼져 있습니다. 아래 ▶️ 아이콘을 눌러 켜주세요.
@@ -369,6 +414,7 @@ export default function PetCamUI() {
           <SectionTitle>🏅 훈련 모드: {training}</SectionTitle>
           <div style={{ marginBottom: '1rem' }}>
             훈련 중입니다. 훈련 완료 시 아래 아이콘에 CLEAR가 표시됩니다.
+            <br />훈련을 종료하려면 상단에서 일반 모드를 선택하세요.
           </div>
           <ButtonGroup>
             <IconButton onClick={() => handleTrainingClick("앉아")}> <Icon>🪑</Icon>앉아 {training === "앉아" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
