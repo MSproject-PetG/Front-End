@@ -259,6 +259,16 @@ export default function PetCamUI() {
     }
   };
 
+  useEffect(() => {
+    let interval;
+    if (streaming) {
+      interval = setInterval(() => {
+        setVideoSrc(`https://relay.petg.store/video?t=${Date.now()}`);
+      }, 30000); // ⏱️ 30초마다 새 요청
+    }
+
+    return () => clearInterval(interval);
+  }, [streaming]);
 
 
   const startTraining = async () => {
