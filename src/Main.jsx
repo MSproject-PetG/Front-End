@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const CAMERA_API = "https://relay.petg.store"; // 카메라 서버 주소
 const AI_API = "https://petg.store"
@@ -183,6 +184,7 @@ export default function PetCamUI() {
   const [streaming, setStreaming] = useState(false);
   const [poseResult, setPoseResult] = useState("");
   const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
+  const navigate = useNavigate();
 
 
   const trainingInstructions = {
@@ -193,15 +195,28 @@ export default function PetCamUI() {
     "강아지가 앉으면 칭찬과 보상을 해주세요."
   ],
   "엎드려": [
-    "강아지를 앉힌 후 손바닥을 펴서 '엎드려'라고 말합니다.",
-    "강아지가 자세를 낮추고 엎드리면 간식을 줍니다."
+    "강아지 코 앞에 간식을 들고 강아지와 마주 앉아주세요.",
+    "강아지가 앉은 상태에서 강아지의 앞발 사이에 간식을 놓고 간식을 뒤로 끌어당깁니다.",
+    "강아지가 완전히 엎드릴 때까지 앞으로 몸을 뻗도록 해 주세요.",
+    "강아지가 엎드리면 칭찬과 보상을 해주세요."
   ],
   "손!": [
     "간식을 손에 쥐고 강아지에게 '손!' 이라고 말합니다.",
     "앞발을 들면 손바닥을 내밀어 올리게 유도합니다."
   ]
-};
+  };
 
+  // ✅ 진입 시 토큰 없으면 로그인으로 강제 이동
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) navigate("/", { replace: true });
+  }, [navigate]);
+
+  // ✅ 로그아웃 처리 함수 추가
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    navigate("/", { replace: true });
+  };
 
   useEffect(() => {
     let interval;
@@ -283,7 +298,21 @@ export default function PetCamUI() {
 
   return (
     <Container>
-      <Header>PetG 홈캠</Header>
+      <Header>
+        PetG 홈캠
+        <button
+          onClick={handleLogout} // ✅ 로그아웃 버튼
+          style={{
+            float: "right",
+            background: "transparent",
+            border: "none",
+            color: "white",
+            fontSize: "1rem",
+            cursor: "pointer"
+          }}>
+          로그아웃
+        </button>
+      </Header>
 
       {/* ✅ 실시간 영상 스트리밍 + 자세 분석 결과 */}
       <VideoSection>
