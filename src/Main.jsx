@@ -184,18 +184,8 @@ export default function PetCamUI() {
   const [streaming, setStreaming] = useState(false);
   const [poseResult, setPoseResult] = useState("");
   const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
-  const [lastStepIndex, setLastStepIndex] = useState(null);
-  const [showStepComplete, setShowStepComplete] = useState(false);
-  const [clear, setClear] = useState(false);
   const navigate = useNavigate();
   const isFirstRender = useRef(true);
-
-  const stepMessages = useMemo(() => [
-    "1. 강아지와 사람을 한 화면에 나오게 해주세요!",
-    "2. 훈련 준비 완료!",
-    "3. 손에 간식을 들고 강아지와 마주 앉으세요.",
-    "4. 간식을 강아지 머리 위로 들어 올리세요."
-  ], []);
 
   const trainingInstructions = {
   "앉아": [
@@ -234,39 +224,16 @@ export default function PetCamUI() {
       interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
-          const msg = res.data?.result;
-          if (!msg) return;
-
-          const stepIdx = stepMessages.indexOf(msg);
-          if (stepIdx === -1) return; // 알 수 없는 메시지 무시
-
-          // 마지막 단계면 Clear 표시
-          if (stepIdx === stepMessages.length - 1) {
-            setClear(true);
-          } else {
-            setClear(false);
-          }
-
-          // 다음 단계로 갔을 때만 완료 메시지 표시
-          if (lastStepIndex !== null && stepIdx > lastStepIndex) {
-            setShowStepComplete(true);
-            setTimeout(() => setShowStepComplete(false), 2000);
-          }
-
-          setLastStepIndex(stepIdx);
-          setPoseResult(msg);
+          if (res.data?.result) setPoseResult(res.data.result);
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
         }
-      }, 2000);
+      }, 1000);
     } else {
       setPoseResult("");
-      setLastStepIndex(null);
-      setShowStepComplete(false);
-      setClear(false);
     }
     return () => clearInterval(interval);
-  }, [mode, poseAnalysisStarted, lastStepIndex, stepMessages]);
+  }, [mode, poseAnalysisStarted]);
 
 
   const toggleStream = async () => {
@@ -357,16 +324,9 @@ export default function PetCamUI() {
           <>
             <VideoStream src="https://relay.petg.store/video" alt="Live" />
             {mode === "train" && poseAnalysisStarted && (
-              <div>
-                {showStepComplete && (
-                  <ResultBox style={{ background: 'rgba(0,255,0,0.2)', fontWeight: 'bold' }}>
-                    ✅ 이전 단계 완료!
-                  </ResultBox>
-                )}
                 <ResultBox>
                   {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
                 </ResultBox>
-              </div>
             )}
           </>
         ) : (
@@ -413,9 +373,9 @@ export default function PetCamUI() {
             <br />훈련을 종료하려면 상단에서 일반 모드를 선택하세요.
           </div>
           <ButtonGroup>
-            <IconButton onClick={() => handleTrainingClick("앉아")}> <Icon>🪑</Icon>앉아 {training === "앉아" && clear && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
-            <IconButton onClick={() => handleTrainingClick("엎드려")}> <Icon>🛏️</Icon>엎드려 {training === "엎드려" && clear && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
-            <IconButton onClick={() => handleTrainingClick("손!")}> <Icon>🐾</Icon>손! {training === "손!" && clear && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
+            <IconButton onClick={() => handleTrainingClick("앉아")}> <Icon>🪑</Icon>앉아 {training === "앉아" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
+            <IconButton onClick={() => handleTrainingClick("엎드려")}> <Icon>🛏️</Icon>엎드려 {training === "엎드려" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
+            <IconButton onClick={() => handleTrainingClick("손!")}> <Icon>🐾</Icon>손! {training === "손!" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
           </ButtonGroup>
 
           <SectionTitle>📂 저장된 훈련 영상</SectionTitle>
