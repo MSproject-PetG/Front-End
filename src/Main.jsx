@@ -279,7 +279,6 @@ export default function PetCamUI() {
   const confirmTraining = () => {
     setShowTrainingModal(false);
     setShowRecordModal(true);
-    startTraining();
   };
 
   const startRecording = () => {
