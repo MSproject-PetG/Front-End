@@ -178,7 +178,7 @@ const ModalButton = styled.button`
 
 export default function PetCamUI() {
   const [mode, setMode] = useState("home");
-  const [training, setTraining] = useState("앉아");
+  const [training, setTraining] = useState("");
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [streaming, setStreaming] = useState(false);
