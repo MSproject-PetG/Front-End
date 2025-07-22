@@ -288,7 +288,7 @@ export default function PetCamUI() {
         command: "start_training",
       });
     } catch (err) {
-      console.error("훈련 모드 시작 실패:", err);
+      alert("스트리밍을 먼저 시작해 주세요!");
     }
   };
 
