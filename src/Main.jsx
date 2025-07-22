@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -184,20 +184,18 @@ export default function PetCamUI() {
   const [streaming, setStreaming] = useState(false);
   const [poseResult, setPoseResult] = useState("");
   const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
-  const [currentStepIndex, setCurrentStepIndex] = useState(null);
   const [lastStepIndex, setLastStepIndex] = useState(null);
   const [showStepComplete, setShowStepComplete] = useState(false);
   const [clear, setClear] = useState(false);
   const navigate = useNavigate();
   const isFirstRender = useRef(true);
 
-  const stepMessages = [
+  const stepMessages = useMemo(() => [
     "1. 강아지와 사람을 한 화면에 나오게 해주세요!",
     "2. 훈련 준비 완료!",
     "3. 손에 간식을 들고 강아지와 마주 앉으세요.",
     "4. 간식을 강아지 머리 위로 들어 올리세요."
-    // 이후 단계가 생길 경우 여기에 추가 가능
-  ];
+  ], []);
 
   const trainingInstructions = {
   "앉아": [
@@ -256,7 +254,6 @@ export default function PetCamUI() {
           }
 
           setLastStepIndex(stepIdx);
-          setCurrentStepIndex(stepIdx);
           setPoseResult(msg);
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
@@ -264,13 +261,12 @@ export default function PetCamUI() {
       }, 2000);
     } else {
       setPoseResult("");
-      setCurrentStepIndex(null);
       setLastStepIndex(null);
       setShowStepComplete(false);
       setClear(false);
     }
     return () => clearInterval(interval);
-  }, [mode, poseAnalysisStarted]);
+  }, [mode, poseAnalysisStarted, lastStepIndex, stepMessages]);
 
 
   const toggleStream = async () => {
@@ -342,7 +338,7 @@ export default function PetCamUI() {
       <Header>
         PetG 홈캠
         <button
-          onClick={handleLogout} // ✅ 로그아웃 버튼
+          onClick={handleLogout} 
           style={{
             float: "right",
             background: "transparent",
@@ -417,9 +413,9 @@ export default function PetCamUI() {
             <br />훈련을 종료하려면 상단에서 일반 모드를 선택하세요.
           </div>
           <ButtonGroup>
-            <IconButton onClick={() => handleTrainingClick("앉아")}> <Icon>🪑</Icon>앉아 {training === "앉아" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
-            <IconButton onClick={() => handleTrainingClick("엎드려")}> <Icon>🛏️</Icon>엎드려 {training === "엎드려" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
-            <IconButton onClick={() => handleTrainingClick("손!")}> <Icon>🐾</Icon>손! {training === "손!" && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
+            <IconButton onClick={() => handleTrainingClick("앉아")}> <Icon>🪑</Icon>앉아 {training === "앉아" && clear && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
+            <IconButton onClick={() => handleTrainingClick("엎드려")}> <Icon>🛏️</Icon>엎드려 {training === "엎드려" && clear && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
+            <IconButton onClick={() => handleTrainingClick("손!")}> <Icon>🐾</Icon>손! {training === "손!" && clear && <ClearBadge>CLEAR</ClearBadge>}</IconButton>
           </ButtonGroup>
 
           <SectionTitle>📂 저장된 훈련 영상</SectionTitle>
