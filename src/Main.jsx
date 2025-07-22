@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -185,6 +185,7 @@ export default function PetCamUI() {
   const [poseResult, setPoseResult] = useState("");
   const [poseAnalysisStarted, setPoseAnalysisStarted] = useState(false);
   const navigate = useNavigate();
+  const isFirstRender = useRef(true);
 
 
   const trainingInstructions = {
@@ -288,10 +289,15 @@ export default function PetCamUI() {
     // 실제 녹화 로직 실행 예정
   };
 
+  // ✅ 처음 렌더링 시엔 stopTraining() 실행 방지
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (mode !== "train") {
       stopTraining();
-      setPoseAnalysisStarted(false);  // 분석 종료
+      setPoseAnalysisStarted(false);
     }
   }, [mode]);
 
