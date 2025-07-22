@@ -315,7 +315,7 @@ export default function PetCamUI() {
 
   const startRecording = () => {
     setShowRecordModal(false);
-    startTraining();                  // AI 서버에 훈련 시작 알림
+    startTraining();              
     setPoseAnalysisStarted(true);
     // 실제 녹화 로직 실행 예정
   };
@@ -356,19 +356,19 @@ export default function PetCamUI() {
         {streaming ? (
           <>
             <VideoStream src="https://relay.petg.store/video" alt="Live" />
-            {mode === "train" && (
-              <>
-            {showStepComplete && (
-              <ResultBox style={{ background: 'rgba(0,255,0,0.2)', fontWeight: 'bold' }}>
-                ✅ 이전 단계 완료!
-              </ResultBox>
+            {mode === "train" && poseAnalysisStarted && (
+              <div>
+                {showStepComplete && (
+                  <ResultBox style={{ background: 'rgba(0,255,0,0.2)', fontWeight: 'bold' }}>
+                    ✅ 이전 단계 완료!
+                  </ResultBox>
+                )}
+                <ResultBox>
+                  {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
+                </ResultBox>
+              </div>
             )}
-            <ResultBox>
-              {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
-            </ResultBox>
           </>
-        )}
-      </>
         ) : (
           <div style={{ color: "white", fontSize: "1.2rem" }}>
             🔌 영상이 꺼져 있습니다. 아래 ▶️ 아이콘을 눌러 켜주세요.
