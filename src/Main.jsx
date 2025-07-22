@@ -364,7 +364,7 @@ export default function PetCamUI() {
               </ResultBox>
             )}
             <ResultBox>
-              자세 결과: {poseResult || "분석 중..."}
+              {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
             </ResultBox>
           </>
         )}
