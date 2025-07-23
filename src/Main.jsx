@@ -187,6 +187,7 @@ export default function PetCamUI() {
   const [videoSrc, setVideoSrc] = useState("https://relay.petg.store/video"); // ✅ 영상 src 상태 관리
   const navigate = useNavigate();
   const isFirstRender = useRef(true);
+  const maxNumRef = useRef(-Infinity); // 수신한 최대 num 초기화
 
   const trainingInstructions = {
   "앉아": [
@@ -220,21 +221,35 @@ export default function PetCamUI() {
   };
 
   useEffect(() => {
+  if (mode === "train" && poseAnalysisStarted) {
+    maxNumRef.current = -Infinity; // 새 훈련 시작마다 초기화
+  }
+}, [mode, poseAnalysisStarted]);
+
+  useEffect(() => {
     let interval;
+
     if (mode === "train" && poseAnalysisStarted) {
       interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
-          if (res.data?.result) setPoseResult(res.data.result);
+          const { num, result } = res.data;
+
+          if (typeof num === "number" && num > maxNumRef.current) {
+            maxNumRef.current = num;
+            setPoseResult(result);
+          }
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
         }
-      }, 1000);
+      }, 2000);
     } else {
       setPoseResult("");
     }
+
     return () => clearInterval(interval);
   }, [mode, poseAnalysisStarted]);
+
 
 
   const toggleStream = async () => {
