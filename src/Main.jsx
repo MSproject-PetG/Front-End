@@ -239,10 +239,11 @@ export default function PetCamUI() {
           const res = await axios.get(`${AI_API}/pose-result`);
           const { num, result } = res.data;
 
-          if (typeof num === "number" && num > maxNumRef.current) {
+          if (typeof num === "number" && num >= -4 && num > maxNumRef.current) {
             maxNumRef.current = num;
             setPoseResult(result);
           }
+
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
         }
@@ -268,43 +269,44 @@ export default function PetCamUI() {
 
       interval = setInterval(async () => {
         try {
-          const imgEl = document.querySelector("img");
-          if (!imgEl) return;
+          const requestBody = JSON.stringify({
+            get_result: true,
+          });
 
-          const canvas = document.createElement("canvas");
-          canvas.width = imgEl.naturalWidth;
-          canvas.height = imgEl.naturalHeight;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
-          const imageBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
+          const requestHeaders = new Headers({
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`,
+          });
 
-          const res = await axios.post(
-            "https://finalmodel.koreacentral.inference.ml.azure.com/score",
-            { image_base64: imageBase64 },
+          const response = await fetch(
+            "https://final-model-2.koreacentral.inference.ml.azure.com/score",
             {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`,
-                Accept: "application/json",
-              },
-              timeout: 3000,
+              method: "POST",
+              body: requestBody,
+              headers: requestHeaders,
             }
           );
 
-          const { pose_prediction } = res.data;
+          if (!response.ok) {
+            throw new Error("Request failed with status " + response.status);
+          }
 
-          if (pose_prediction === 1) {
+          const result = await response.json();
+
+          if (result === 1) {
             setShowSuccessModal(true); // 🎉 훈련 성공 모달
             clearInterval(interval);
           }
+
         } catch (e) {
-          console.error("🔥 Azure 분석 요청 실패:", e);
+          console.error("🔥 Azure get_result 요청 실패:", e);
         }
       }, 3000);
     }
 
     return () => clearInterval(interval);
-  }, [mode, poseAnalysisStarted, poseResult]); // poseResult가 변할 때마다 재확인
+  }, [mode, poseAnalysisStarted, poseResult]);
+
 
 
 
