@@ -269,43 +269,30 @@ export default function PetCamUI() {
 
       interval = setInterval(async () => {
         try {
-          const requestBody = JSON.stringify({
-            get_result: true,
-          });
+          const res = await axios.get(`${CAMERA_API}/pose-result`);
+          const { result } = res.data;
 
-          const requestHeaders = new Headers({
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`,
-          });
+          // result가 숫자형 0 또는 1이라고 가정
+          if (typeof result === "number" && result > maxNumRef.current) {
+            maxNumRef.current = result;
+            setPoseResult(result);
 
-          const response = await fetch(
-            "https://final-model-2.koreacentral.inference.ml.azure.com/score",
-            {
-              method: "POST",
-              body: requestBody,
-              headers: requestHeaders,
+            if (result === 1) {
+              setShowSuccessModal(true);
+              clearInterval(interval);
             }
-          );
-
-          if (!response.ok) {
-            throw new Error("Request failed with status " + response.status);
-          }
-
-          const result = await response.json();
-
-          if (result === 1) {
-            setShowSuccessModal(true); // 🎉 훈련 성공 모달
-            clearInterval(interval);
           }
 
         } catch (e) {
-          console.error("🔥 Azure get_result 요청 실패:", e);
+          console.error("🔥 /pose-result 요청 실패:", e);
         }
       }, 3000);
     }
 
     return () => clearInterval(interval);
-  }, [mode, poseAnalysisStarted, poseResult]);
+  } , [mode, poseAnalysisStarted]);
+
+
 
 
 
