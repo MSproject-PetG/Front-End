@@ -190,6 +190,7 @@ export default function PetCamUI() {
   const maxNumRef = useRef(-Infinity); // 수신한 최대 num 초기화
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   //const finalCheckStartedRef = useRef(false);
+  const fallbackTimeoutRef = useRef(null);
 
 
 
@@ -230,27 +231,47 @@ export default function PetCamUI() {
     }
   }, [mode, poseAnalysisStarted]);
 
+  
+
   useEffect(() => {
     let interval;
-    let fallbackTimeout; // 5초 타이머
 
     if (mode === "train" && poseAnalysisStarted) {
-      fallbackTimeout = setTimeout(() => {
-        if (maxNumRef.current === -1) {
-          setShowSuccessModal(true); // 🎉 강제 성공 모달
-        }
-      }, 5000); // 5초 후
-      
       interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
           const { num, result } = res.data;
 
-          if (typeof num === "number" && num >= -4 && num > maxNumRef.current) {
-            maxNumRef.current = num;
-            setPoseResult(result);
-          }
+          if (typeof num === "number") {
+            // ✅ fallback 트리거: 처음으로 -1일 때 타이머 시작
+            if (
+              num === -1 &&
+              maxNumRef.current !== -1 &&
+              fallbackTimeoutRef.current === null
+            ) {
+              fallbackTimeoutRef.current = setTimeout(() => {
+                if (maxNumRef.current === -1) {
+                  setShowSuccessModal(true); // 🎉 강제 성공 모달
+                }
+              }, 5000);
+            }
 
+            if (num > maxNumRef.current) {
+              maxNumRef.current = num;
+              setPoseResult(result);
+
+              // ✅ 값이 바뀌면 fallback 타이머 취소
+              if (fallbackTimeoutRef.current) {
+                clearTimeout(fallbackTimeoutRef.current);
+                fallbackTimeoutRef.current = null;
+              }
+
+              if (result === 1) {
+                setShowSuccessModal(true);
+                clearInterval(interval);
+              }
+            }
+          }
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
         }
@@ -261,9 +282,13 @@ export default function PetCamUI() {
 
     return () => {
       clearInterval(interval);
-      clearTimeout(fallbackTimeout); // cleanup
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current);
+        fallbackTimeoutRef.current = null;
+      }
     };
   }, [mode, poseAnalysisStarted]);
+
 
 
  /* useEffect(() => {
