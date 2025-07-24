@@ -235,11 +235,10 @@ export default function PetCamUI() {
   }, [mode, poseAnalysisStarted]);
 
   useEffect(() => {
-    let pollingInterval;
-    let imageAnalysisInterval;
+    let interval;
 
     if (mode === "train" && poseAnalysisStarted) {
-      pollingInterval = setInterval(async () => {
+      interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
           const { num, result } = res.data;
@@ -247,49 +246,6 @@ export default function PetCamUI() {
           if (typeof num === "number" && num > maxNumRef.current) {
             maxNumRef.current = num;
             setPoseResult(result);
-          }
-
-          // ✅ 'num == -1'이 되었고, 이미지 기반 요청 아직 안 했으면
-          if (maxNumRef.current === -1) {
-
-            imageAnalysisInterval = setInterval(async () => {
-              try {
-                const imgEl = document.querySelector("img");
-                if (!imgEl) return;
-
-                const canvas = document.createElement("canvas");
-                canvas.width = imgEl.naturalWidth;
-                canvas.height = imgEl.naturalHeight;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
-                const imageBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
-
-                const res = await axios.post(
-                  "https://finalmodel.koreacentral.inference.ml.azure.com/score",
-                  { image_base64: imageBase64 },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`,
-                      Accept: "application/json",
-                    },
-                    timeout: 3000,
-                  }
-                );
-
-                const { pose_prediction } = res.data;
-                console.log("🔥 Azure 응답:", pose_prediction);
-
-                if (pose_prediction === 1) {
-                  setShowSuccessModal(true); // 훈련 종료 모달
-                  clearInterval(imageAnalysisInterval);
-                  clearInterval(pollingInterval);
-                }
-
-              } catch (e) {
-                console.error("Azure 이미지 분석 실패:", e);
-              }
-            }, 3000);
           }
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
@@ -299,10 +255,7 @@ export default function PetCamUI() {
       setPoseResult("");
     }
 
-    return () => {
-      clearInterval(pollingInterval);
-      clearInterval(imageAnalysisInterval);
-    };
+    return () => clearInterval(interval);
   }, [mode, poseAnalysisStarted]);
 
 
@@ -418,7 +371,7 @@ export default function PetCamUI() {
             <VideoStream key={videoSrc} src={videoSrc} alt="Live" />
             {mode === "train" && poseAnalysisStarted && (
                 <ResultBox>
-                  {poseResult || "강아지와 사람을 한 화면에 나오게 해주세요!"}
+                  {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
                 </ResultBox>
             )}
           </>
