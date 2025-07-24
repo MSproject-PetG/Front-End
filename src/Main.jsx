@@ -251,7 +251,7 @@ export default function PetCamUI() {
           }
 
           // ✅ 'num == -1'이 되었고, 이미지 기반 요청 아직 안 했으면
-          if (num === -1 && !imageRequestStarted) {
+          if (maxNumRef.current === -1 && !imageRequestStarted) {
             imageRequestStarted = true;
 
             imageAnalysisInterval = setInterval(async () => {
@@ -420,7 +420,7 @@ export default function PetCamUI() {
             <VideoStream key={videoSrc} src={videoSrc} alt="Live" />
             {mode === "train" && poseAnalysisStarted && (
                 <ResultBox>
-                  {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
+                  {poseResult || "강아지와 사람을 한 화면에 나오게 해주세요!"}
                 </ResultBox>
             )}
           </>
