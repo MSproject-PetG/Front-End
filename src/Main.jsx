@@ -188,6 +188,8 @@ export default function PetCamUI() {
   const navigate = useNavigate();
   const isFirstRender = useRef(true);
   const maxNumRef = useRef(-Infinity); // 수신한 최대 num 초기화
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
 
   const trainingInstructions = {
   "앉아": [
@@ -221,16 +223,24 @@ export default function PetCamUI() {
   };
 
   useEffect(() => {
-  if (mode === "train" && poseAnalysisStarted) {
-    maxNumRef.current = -Infinity; // 새 훈련 시작마다 초기화
-  }
-}, [mode, poseAnalysisStarted]);
+    if (mode === "train" && poseAnalysisStarted) {
+      maxNumRef.current = -Infinity; // 새 훈련 시작마다 초기화
+    }
+  }, [mode, poseAnalysisStarted]);
 
   useEffect(() => {
-    let interval;
+  if (mode === "train" && poseAnalysisStarted) {
+      maxNumRef.current = -Infinity;
+    }
+  }, [mode, poseAnalysisStarted]);
+
+  useEffect(() => {
+    let pollingInterval;
+    let imageAnalysisInterval;
+    let imageRequestStarted = false;
 
     if (mode === "train" && poseAnalysisStarted) {
-      interval = setInterval(async () => {
+      pollingInterval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
           const { num, result } = res.data;
@@ -238,6 +248,50 @@ export default function PetCamUI() {
           if (typeof num === "number" && num > maxNumRef.current) {
             maxNumRef.current = num;
             setPoseResult(result);
+          }
+
+          // ✅ 'num == -1'이 되었고, 이미지 기반 요청 아직 안 했으면
+          if (num === -1 && !imageRequestStarted) {
+            imageRequestStarted = true;
+
+            imageAnalysisInterval = setInterval(async () => {
+              try {
+                const imgEl = document.querySelector("img");
+                if (!imgEl) return;
+
+                const canvas = document.createElement("canvas");
+                canvas.width = imgEl.naturalWidth;
+                canvas.height = imgEl.naturalHeight;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+                const imageBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
+
+                const res = await axios.post(
+                  "https://finalmodel.koreacentral.inference.ml.azure.com/score",
+                  { image_base64: imageBase64 },
+                  {
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`,
+                      Accept: "application/json",
+                    },
+                    timeout: 3000,
+                  }
+                );
+
+                const { pose_prediction } = res.data;
+                console.log("🔥 Azure 응답:", pose_prediction);
+
+                if (pose_prediction === 1) {
+                  setShowSuccessModal(true); // 훈련 종료 모달
+                  clearInterval(imageAnalysisInterval);
+                  clearInterval(pollingInterval);
+                }
+
+              } catch (e) {
+                console.error("Azure 이미지 분석 실패:", e);
+              }
+            }, 3000);
           }
         } catch (e) {
           console.error("자세 결과 수신 오류:", e);
@@ -247,8 +301,12 @@ export default function PetCamUI() {
       setPoseResult("");
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(pollingInterval);
+      clearInterval(imageAnalysisInterval);
+    };
   }, [mode, poseAnalysisStarted]);
+
 
 
 
@@ -450,6 +508,23 @@ export default function PetCamUI() {
             <ModalButtonContainer>
               <ModalButton onClick={startRecording}>시작</ModalButton>
               <ModalButton onClick={() => setShowRecordModal(false)}>취소</ModalButton>
+            </ModalButtonContainer>
+          </ModalBox>
+        </ModalOverlay>
+      )}
+
+      {showSuccessModal && (
+        <ModalOverlay>
+          <ModalBox style={{ textAlign: 'center' }}>
+            <h3 style={{ color: '#4ade80', marginBottom: '1rem' }}>
+              🎉 훈련 성공!
+            </h3>
+            <ModalContent>
+              강아지에게 칭찬과 보상을 해주세요!<br />
+              아주 잘했어요 🐶👏
+            </ModalContent>
+            <ModalButtonContainer>
+              <ModalButton onClick={() => setShowSuccessModal(false)}>확인</ModalButton>
             </ModalButtonContainer>
           </ModalBox>
         </ModalOverlay>
