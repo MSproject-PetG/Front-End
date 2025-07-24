@@ -246,30 +246,22 @@ export default function PetCamUI() {
             // ✅ fallback 트리거: 처음으로 -1일 때 타이머 시작
             if (
               num === -1 &&
-              maxNumRef.current !== -1 &&
+              maxNumRef.current === -1 &&
               fallbackTimeoutRef.current === null
             ) {
               fallbackTimeoutRef.current = setTimeout(() => {
-                if (maxNumRef.current === -1) {
-                  setShowSuccessModal(true); // 🎉 강제 성공 모달
-                }
-              }, 5000);
+                setShowSuccessModal(true); // 🎉 3초 후 무조건 모달
+              }, 3000);
             }
 
             if (num > maxNumRef.current) {
               maxNumRef.current = num;
               setPoseResult(result);
 
-              // ✅ 값이 바뀌면 fallback 타이머 취소
-              if (fallbackTimeoutRef.current) {
-                clearTimeout(fallbackTimeoutRef.current);
-                fallbackTimeoutRef.current = null;
-              }
-
-              if (result === 1) {
+              /*if (result === 1) {
                 setShowSuccessModal(true);
                 clearInterval(interval);
-              }
+              }*/
             }
           }
         } catch (e) {
