@@ -189,6 +189,8 @@ export default function PetCamUI() {
   const isFirstRender = useRef(true);
   const maxNumRef = useRef(-Infinity); // 수신한 최대 num 초기화
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const finalCheckStartedRef = useRef(false);
+
 
 
   const trainingInstructions = {
@@ -229,12 +231,6 @@ export default function PetCamUI() {
   }, [mode, poseAnalysisStarted]);
 
   useEffect(() => {
-  if (mode === "train" && poseAnalysisStarted) {
-      maxNumRef.current = -Infinity;
-    }
-  }, [mode, poseAnalysisStarted]);
-
-  useEffect(() => {
     let interval;
 
     if (mode === "train" && poseAnalysisStarted) {
@@ -258,6 +254,57 @@ export default function PetCamUI() {
     return () => clearInterval(interval);
   }, [mode, poseAnalysisStarted]);
 
+
+  useEffect(() => {
+    let interval;
+
+    if (
+      mode === "train" &&
+      poseAnalysisStarted &&
+      maxNumRef.current === -1 &&
+      !finalCheckStartedRef.current
+    ) {
+      finalCheckStartedRef.current = true;
+
+      interval = setInterval(async () => {
+        try {
+          const imgEl = document.querySelector("img");
+          if (!imgEl) return;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = imgEl.naturalWidth;
+          canvas.height = imgEl.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+          const imageBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
+
+          const res = await axios.post(
+            "https://finalmodel.koreacentral.inference.ml.azure.com/score",
+            { image_base64: imageBase64 },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`,
+                Accept: "application/json",
+              },
+              timeout: 3000,
+            }
+          );
+
+          const { pose_prediction } = res.data;
+
+          if (pose_prediction === 1) {
+            setShowSuccessModal(true); // 🎉 훈련 성공 모달
+            clearInterval(interval);
+          }
+        } catch (e) {
+          console.error("🔥 Azure 분석 요청 실패:", e);
+        }
+      }, 3000);
+    }
+
+    return () => clearInterval(interval);
+  }, [mode, poseAnalysisStarted, poseResult]); // poseResult가 변할 때마다 재확인
 
 
 
