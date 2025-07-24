@@ -251,7 +251,7 @@ export default function PetCamUI() {
           }
 
           // ✅ 'num == -1'이 되었고, 이미지 기반 요청 아직 안 했으면
-          if (maxNumRef.current === -1 && !imageRequestStarted) {
+          if (maxNumRef.current === -1) {
             imageRequestStarted = true;
 
             imageAnalysisInterval = setInterval(async () => {
