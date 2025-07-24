@@ -371,7 +371,7 @@ export default function PetCamUI() {
             <VideoStream key={videoSrc} src={videoSrc} alt="Live" />
             {mode === "train" && poseAnalysisStarted && (
                 <ResultBox>
-                  {poseResult || "1. 강아지와 사람을 한 화면에 나오게 해주세요!"}
+                  {poseResult || "강아지와 사람을 한 화면에 나오게 해주세요!"}
                 </ResultBox>
             )}
           </>
