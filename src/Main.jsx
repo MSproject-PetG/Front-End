@@ -189,7 +189,7 @@ export default function PetCamUI() {
   const isFirstRender = useRef(true);
   const maxNumRef = useRef(-Infinity); // 수신한 최대 num 초기화
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const finalCheckStartedRef = useRef(false);
+  //const finalCheckStartedRef = useRef(false);
 
 
 
@@ -232,8 +232,15 @@ export default function PetCamUI() {
 
   useEffect(() => {
     let interval;
+    let fallbackTimeout; // 5초 타이머
 
     if (mode === "train" && poseAnalysisStarted) {
+      fallbackTimeout = setTimeout(() => {
+        if (maxNumRef.current === -1) {
+          setShowSuccessModal(true); // 🎉 강제 성공 모달
+        }
+      }, 5000); // 5초 후
+      
       interval = setInterval(async () => {
         try {
           const res = await axios.get(`${AI_API}/pose-result`);
@@ -252,11 +259,14 @@ export default function PetCamUI() {
       setPoseResult("");
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(fallbackTimeout); // cleanup
+    };
   }, [mode, poseAnalysisStarted]);
 
 
-  useEffect(() => {
+ /* useEffect(() => {
     let interval;
 
     if (
@@ -291,7 +301,7 @@ export default function PetCamUI() {
 
     return () => clearInterval(interval);
   } , [mode, poseAnalysisStarted]);
-
+*/
 
 
 
